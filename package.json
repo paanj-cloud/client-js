@@ -1,0 +1,53 @@
+{
+    "name": "@paanj/client",
+    "version": "1.0.0",
+    "description": "Core client SDK for Paanj platform - provides authentication and connection management",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "files": [
+        "dist",
+        "README.md",
+        "LICENSE"
+    ],
+    "scripts": {
+        "build": "tsc",
+        "watch": "tsc --watch",
+        "prepublishOnly": "npm run build"
+    },
+    "keywords": [
+        "paanj",
+        "client",
+        "core",
+        "sdk",
+        "websocket",
+        "authentication"
+    ],
+    "author": "Paanj",
+    "license": "SEE LICENSE IN LICENSE",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/paanj/chat-baas.git",
+        "directory": "sdks/javascript/client"
+    },
+    "homepage": "https://github.com/paanj/chat-baas/tree/main/sdks/javascript/client#readme",
+    "bugs": {
+        "url": "https://github.com/paanj/chat-baas/issues"
+    },
+    "engines": {
+        "node": ">=16.0.0"
+    },
+    "dependencies": {
+        "node-fetch": "^2.7.0",
+        "ws": "^8.16.0"
+    },
+    "devDependencies": {
+        "@types/node": "^20.19.25",
+        "@types/node-fetch": "^2.6.13",
+        "@types/ws": "^8.5.10",
+        "typescript": "^5.0.0"
+    },
+    "browser": {
+        "ws": false,
+        "node-fetch": false
+    }
+}
