@@ -13,6 +13,9 @@ export class ClientWebSocketClient {
     private eventHandlers: Map<string, Set<(data: any) => void>> = new Map();
     private isConnected: boolean = false;
     private reconnectTimeout: any = null; // NodeJS.Timeout or number
+    private backoffBase: number;
+    private backoffMax: number;
+    private jitter: boolean;
 
     constructor(
         apiKey: string,
@@ -21,6 +24,9 @@ export class ClientWebSocketClient {
             autoReconnect?: boolean;
             reconnectInterval?: number;
             maxReconnectAttempts?: number;
+            backoffBase?: number;
+            backoffMax?: number;
+            jitter?: boolean;
         } = {}
     ) {
         this.apiKey = apiKey;
@@ -28,6 +34,9 @@ export class ClientWebSocketClient {
         this.autoReconnect = options.autoReconnect ?? true;
         this.reconnectInterval = options.reconnectInterval ?? 5000;
         this.maxReconnectAttempts = options.maxReconnectAttempts ?? 10;
+        this.backoffBase = options.backoffBase ?? 0;
+        this.backoffMax = options.backoffMax ?? 30000;
+        this.jitter = options.jitter ?? true;
     }
 
     setAccessToken(token: string) {
@@ -40,6 +49,12 @@ export class ClientWebSocketClient {
         }
     }
 
+    createWebSocket(url: string): WebSocket {
+        // In browser environment, WebSocket is global
+        const WS = typeof WebSocket !== 'undefined' ? WebSocket : global.WebSocket || require('ws');
+        return new WS(url) as unknown as WebSocket;
+    }
+
     async connect(): Promise<void> {
         if (!this.accessToken) {
             throw new Error('Access token required for connection. Authenticate first.');
@@ -47,12 +62,9 @@ export class ClientWebSocketClient {
 
         return new Promise((resolve, reject) => {
             try {
-                // In browser environment, WebSocket is global
-                const WS = typeof WebSocket !== 'undefined' ? WebSocket : global.WebSocket || require('ws');
-
                 const token = this.accessToken || '';
                 const url = `${this.wsUrl}/ws?token=${encodeURIComponent(token)}`;
-                this.ws = new WS(url) as unknown as WebSocket;
+                this.ws = this.createWebSocket(url);
 
                 if (!this.ws) throw new Error('Failed to create WebSocket instance');
 
@@ -83,7 +95,8 @@ export class ClientWebSocketClient {
                 };
 
                 this.ws.onerror = (error: any) => {
-                    console.error('Paanj Client WebSocket error:', error);
+                    // console.error('Paanj Client WebSocket error:', error);
+                    this.emit('error', error);
                     // Only reject if we're currently trying to connect
                     if (!this.isConnected) {
                         reject(error);
@@ -101,13 +114,30 @@ export class ClientWebSocketClient {
         }
 
         this.reconnectAttempts++;
-        console.log(`Reconnecting in ${this.reconnectInterval}ms (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
+
+        let delay = this.reconnectInterval;
+        if (this.backoffBase > 0) {
+            delay = this.backoffBase * Math.pow(2, this.reconnectAttempts - 1);
+            if (this.backoffMax > 0) {
+                delay = Math.min(delay, this.backoffMax);
+            }
+        }
+
+        if (this.jitter) {
+            // Add random jitter between 0 and 1000ms (or proportional)
+            // Simple jitter: +/- 20%
+            const jitterFactor = 0.8 + Math.random() * 0.4;
+            delay = Math.floor(delay * jitterFactor);
+        }
+
+        console.log(`Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
+        this.emit('reconnecting', this.reconnectAttempts);
 
         this.reconnectTimeout = setTimeout(() => {
             this.connect().catch((error) => {
                 console.error('Reconnection failed:', error);
             });
-        }, this.reconnectInterval);
+        }, delay);
     }
 
     subscribe(subscription: ClientSubscription): void {
