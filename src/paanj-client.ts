@@ -43,11 +43,14 @@ export class PaanjClient {
     /**
      * Authenticate as an anonymous user
      */
-    async authenticateAnonymous(userData: { name: string; metadata?: any }): Promise<AuthResponse> {
+    async authenticateAnonymous(userData: { name: string; metadata?: any }, privateData?: any): Promise<AuthResponse> {
         const response = await this.httpClient.request<AuthResponse>(
             'POST',
             '/api/v1/users/anonymous',
-            { user: userData },
+            {
+                user: userData,
+                private: privateData
+            },
             true // Skip auth header
         );
 
@@ -58,9 +61,13 @@ export class PaanjClient {
     /**
      * Authenticate with an existing token
      */
-    async authenticateWithToken(token: string): Promise<void> {
-        // Verify token validity? For now just set it
+    /**
+     * Authenticate with an existing token
+     */
+    async authenticateWithToken(token: string, userId?: string, refreshToken?: string): Promise<void> {
         this.accessToken = token;
+        if (userId) this.userId = userId;
+
         this.wsClient.setAccessToken(token);
         this.httpClient.setAccessToken(token);
     }
