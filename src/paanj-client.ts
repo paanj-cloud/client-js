@@ -18,7 +18,6 @@ export class PaanjClient {
 
     constructor(options: ClientOptions) {
         if (!options.apiKey) {
-            console.log("test");
             throw new Error('API Key is required');
         }
 
