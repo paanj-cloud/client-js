@@ -4,7 +4,7 @@
 
 [![npm version](https://img.shields.io/npm/v/@paanj/client.svg)](https://www.npmjs.com/package/@paanj/client)
 [![License](https://img.shields.io/badge/license-Custom-blue.svg)](./LICENSE)
-[![Node.js](https://img.shields.io/badge/Node.js-16+-green.svg)](https://nodejs.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg)](https://nodejs.org/)
 
 ## Overview
 

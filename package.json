@@ -34,7 +34,7 @@
         "url": "https://github.com/paanj/chat-baas/issues"
     },
     "engines": {
-        "node": ">=16.0.0"
+        "node": ">=18.0.0"
     },
     "dependencies": {
         "node-fetch": "^2.7.0",
