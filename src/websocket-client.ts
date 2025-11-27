@@ -71,7 +71,7 @@ export class ClientWebSocketClient {
                 this.ws.onopen = () => {
                     this.isConnected = true;
                     this.reconnectAttempts = 0;
-                    console.log('Paanj Client WebSocket connected');
+                    // console.log('Paanj Client WebSocket connected');
                     resolve();
                 };
 
@@ -87,7 +87,7 @@ export class ClientWebSocketClient {
 
                 this.ws.onclose = () => {
                     this.isConnected = false;
-                    console.log('Paanj Client WebSocket disconnected');
+                    // console.log('Paanj Client WebSocket disconnected');
 
                     if (this.autoReconnect && this.reconnectAttempts < this.maxReconnectAttempts) {
                         this.scheduleReconnect();
@@ -186,6 +186,30 @@ export class ClientWebSocketClient {
             console.log(`Subscribed to ${sub.resource}:${sub.id || 'global'} events:`, sub.events);
         } else if (message.type === 'pong') {
             // Handle pong
+        } else if (message.type === 'message') {
+            // Handle chat message
+            // Map server message format to client event format if needed, or just emit
+            // Server sends: { type: 'message', source: '...', message: '...', hash: '...', conversationID: '...', timestamp: ... }
+            // We want to emit 'message.create' with this data
+
+            // Add senderId and conversationId aliases for convenience/consistency
+            const msg = {
+                ...message,
+                senderId: parseInt(message.source),
+                conversationId: message.conversationID,
+                content: message.message
+            };
+
+            this.emit('message.create', msg);
+
+            // Also emit conversation-specific event
+            if (msg.conversationId) {
+                this.emit(`conversation:${msg.conversationId}:message.create`, msg);
+            }
+        } else if (message.type === 'error') {
+            // Handle error message from server
+            console.error('Received error from server:', message);
+            this.emit('error', new Error(message.message || 'Unknown error from server'));
         }
     }
 
