@@ -166,7 +166,7 @@ This project is licensed under a custom license. See the [LICENSE](./LICENSE) fi
 
 - 📧 Email: support@paanj.com
 - 📖 Documentation: https://docs.paanj.com
-- 🐛 Issues: https://github.com/paanj/chat-baas/issues
+- 🐛 Issues: https://github.com/paanj-cloud/client-js/issues
 
 ---
 
