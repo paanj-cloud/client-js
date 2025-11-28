@@ -213,7 +213,11 @@ export class ClientWebSocketClient {
         }
     }
 
-    private emit(event: string, data: any): void {
+    /**
+     * Emit an event to registered listeners
+     * @internal - For use by PaanjClient to emit authentication events
+     */
+    emit(event: string, data: any): void {
         const handlers = this.eventHandlers.get(event);
         if (handlers) {
             handlers.forEach((handler) => {

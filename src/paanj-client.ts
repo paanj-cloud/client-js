@@ -14,6 +14,7 @@ export class PaanjClient {
     private httpClient: ClientHttpClient;
     private options: Required<ClientOptions>;
     private accessToken: string | null = null;
+    private refreshToken: string | null = null;
     private userId: string | null = null;
 
     constructor(options: ClientOptions) {
@@ -38,6 +39,11 @@ export class PaanjClient {
         });
 
         this.httpClient = new ClientHttpClient(this.apiKey, this.options.apiUrl);
+        
+        // Set up automatic token refresh callback
+        this.httpClient.setRefreshTokenCallback(async () => {
+            await this.refreshAccessToken();
+        });
     }
 
     /**
@@ -55,25 +61,46 @@ export class PaanjClient {
         );
 
         this.setSession(response);
+        
+        // Emit user created event through WebSocket client event system
+        this.wsClient.emit('user.created', {
+            userId: response.userId,
+            accessToken: response.accessToken,
+            refreshToken: response.refreshToken
+        });
+        
         return response;
     }
 
     /**
      * Authenticate with an existing token
+     * @param token Access token
+     * @param userId User ID (optional, can be extracted from token)
+     * @param refreshToken Refresh token (required for token refresh functionality)
      */
-    /**
-     * Authenticate with an existing token
-     */
-    async authenticateWithToken(token: string, userId?: string, refreshToken?: string): Promise<void> {
+    async authenticateWithToken(token: string, userId: string | undefined, refreshToken: string): Promise<void> {
+        if (!refreshToken) {
+            throw new Error('Refresh token is required for token refresh functionality');
+        }
+
         this.accessToken = token;
+        this.refreshToken = refreshToken;
         if (userId) this.userId = userId;
 
         this.wsClient.setAccessToken(token);
         this.httpClient.setAccessToken(token);
+        
+        // Emit token updated event through WebSocket client event system
+        this.wsClient.emit('token.updated', {
+            userId: this.userId,
+            accessToken: token,
+            refreshToken: refreshToken
+        });
     }
 
     private setSession(session: AuthResponse) {
         this.accessToken = session.accessToken;
+        this.refreshToken = session.refreshToken;
         this.userId = session.userId;
         this.wsClient.setAccessToken(session.accessToken);
         this.httpClient.setAccessToken(session.accessToken);
@@ -118,6 +145,51 @@ export class PaanjClient {
     }
 
     /**
+     * Get current refresh token
+     */
+    getRefreshToken(): string | null {
+        return this.refreshToken;
+    }
+
+    /**
+     * Refresh the access token using the stored refresh token
+     * @returns New access token and refresh token
+     */
+    async refreshAccessToken(): Promise<AuthResponse> {
+        if (!this.refreshToken) {
+            throw new Error('No refresh token available. Call authenticateAnonymous() or authenticateWithToken() first.');
+        }
+
+        const response = await this.httpClient.request<{ accessToken: string; refreshToken: string }>(
+            'POST',
+            '/api/v1/auth/refresh',
+            {
+                refreshToken: this.refreshToken
+            },
+            true // Skip auth header (refresh endpoint doesn't require user auth)
+        );
+
+        // Update session with new tokens
+        const authResponse: AuthResponse = {
+            accessToken: response.accessToken,
+            refreshToken: response.refreshToken,
+            expiresIn: 0, // Not provided by refresh endpoint
+            userId: this.userId || '' // Keep existing userId
+        };
+
+        this.setSession(authResponse);
+        
+        // Emit token updated event through WebSocket client event system
+        this.wsClient.emit('token.updated', {
+            userId: this.userId,
+            accessToken: authResponse.accessToken,
+            refreshToken: authResponse.refreshToken
+        });
+        
+        return authResponse;
+    }
+
+    /**
      * Get WebSocket client (for use by feature packages)
      * @internal
      */
@@ -150,8 +222,27 @@ export class PaanjClient {
     }
 
     /**
-     * Register event listener (for use by feature packages)
-     * @internal
+     * Register event listener
+     * Works for both WebSocket events (messages, etc.) and authentication events
+     * 
+     * @example
+     * ```typescript
+     * // Listen for authentication events
+     * client.on('user.created', ({ userId, accessToken, refreshToken }) => {
+     *   console.log('User created:', userId);
+     *   // Store tokens securely
+     * });
+     * 
+     * client.on('token.updated', ({ userId, accessToken, refreshToken }) => {
+     *   console.log('Token refreshed');
+     *   // Update stored tokens
+     * });
+     * 
+     * // Listen for messages (same way)
+     * client.on('message.create', (message) => {
+     *   console.log('New message:', message);
+     * });
+     * ```
      */
     on(event: string, callback: (data: any) => void): Unsubscribe {
         return this.wsClient.on(event, callback);

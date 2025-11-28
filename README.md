@@ -34,6 +34,17 @@ const client = new PaanjClient({
   wsUrl: 'wss://ws.paanj.com'
 });
 
+// Listen for authentication events (same way as listening to messages)
+client.on('user.created', ({ userId, accessToken, refreshToken }) => {
+  console.log('User created:', userId);
+  // Store tokens securely (e.g., localStorage, secure storage)
+});
+
+client.on('token.updated', ({ userId, accessToken, refreshToken }) => {
+  console.log('Token refreshed');
+  // Update stored tokens
+});
+
 // Authenticate
 await client.authenticateAnonymous({
   name: 'John Doe'
@@ -47,6 +58,15 @@ console.log(client.isConnected()); // true
 
 // Disconnect
 client.disconnect();
+
+// Refresh token when access token expires
+try {
+  const newSession = await client.refreshAccessToken();
+  console.log('Tokens refreshed:', newSession.accessToken);
+} catch (error) {
+  console.error('Token refresh failed:', error);
+  // Re-authenticate if refresh fails
+}
 ```
 
 ### With Feature Packages
@@ -89,8 +109,8 @@ new PaanjClient(options: ClientOptions)
 **`authenticateAnonymous(userData, privateData?): Promise<AuthResponse>`**  
 Authenticate as a new anonymous user. `privateData` is optional and not stored but sent to webhooks.
 
-**`authenticateWithToken(token: string, userId?: string, refreshToken?: string): Promise<void>`**  
-Authenticate with an existing access token.
+**`authenticateWithToken(token: string, userId: string | undefined, refreshToken: string): Promise<void>`**  
+Authenticate with an existing access token. `refreshToken` is required for token refresh functionality.
 
 **`connect(): Promise<void>`**  
 Connect to the WebSocket server.
@@ -106,6 +126,19 @@ Check if authenticated.
 
 **`getUserId(): string | null`**  
 Get the current user ID.
+
+**`getRefreshToken(): string | null`**  
+Get the current refresh token (for token refresh operations).
+
+**`refreshAccessToken(): Promise<AuthResponse>`**  
+Refresh the access token using the stored refresh token. Returns new access and refresh tokens. Automatically emits `token.updated` event.
+
+**`on(event: string, callback): Unsubscribe`**  
+Register event listener. Works for both WebSocket events (messages, etc.) and authentication events:
+- `user.created` - Emitted when a user is created via `authenticateAnonymous()`. Receives `{ userId, accessToken, refreshToken }`
+- `token.updated` - Emitted when tokens are updated via `refreshAccessToken()` or `authenticateWithToken()`. Receives `{ userId, accessToken, refreshToken }`
+- `message.create` - Emitted when a new message is received (WebSocket event)
+- Other WebSocket events as documented
 
 ## Security Best Practices
 
