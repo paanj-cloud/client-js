@@ -86,10 +86,10 @@ new PaanjClient(options: ClientOptions)
 
 #### Methods
 
-**`authenticateAnonymous(userData): Promise<AuthResponse>`**  
-Authenticate as a new anonymous user.
+**`authenticateAnonymous(userData, privateData?): Promise<AuthResponse>`**  
+Authenticate as a new anonymous user. `privateData` is optional and not stored but sent to webhooks.
 
-**`authenticateWithToken(token: string): Promise<void>`**  
+**`authenticateWithToken(token: string, userId?: string, refreshToken?: string): Promise<void>`**  
 Authenticate with an existing access token.
 
 **`connect(): Promise<void>`**  
