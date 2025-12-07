@@ -54,6 +54,7 @@ export class ClientHttpClient {
         skipAuth: boolean = false,
         retryOn401: boolean = true
     ): Promise<T> {
+        console.log(`[HTTP Client] ${method} ${path} - Starting request`);
         const url = `${this.apiUrl}${path}`;
         const headers: Record<string, string> = {
             'X-API-Key': this.apiKey,
@@ -109,7 +110,9 @@ export class ClientHttpClient {
             throw new Error(error.error || `HTTP ${response.status}: ${response.statusText}`);
         }
 
-        return response.json() as Promise<T>;
+        const jsonResponse = await response.json();
+        console.log(`[HTTP Client] ${method} ${path} -> Response:`, JSON.stringify(jsonResponse).substring(0, 200));
+        return jsonResponse as T;
     }
 
     /**
