@@ -9,10 +9,10 @@ if (typeof process !== 'undefined' && process.release?.name === 'node') {
     }
 }
 
-export { PaanjClient } from './paanj-client';
-export { ClientOptions, Unsubscribe, AuthResponse } from './types/core-types';
+export { PaanjClient } from './paanj-client.js';
+export { ClientOptions, Unsubscribe, AuthResponse } from './types/core-types.js';
 
 // Internal exports for feature packages
-export { ClientWebSocketClient } from './websocket-client';
-export { ClientHttpClient } from './http-client';
-export type { ClientSubscription, ClientSubscribed, ClientEvent } from './types/core-types';
+export { ClientWebSocketClient } from './websocket-client.js';
+export { ClientHttpClient } from './http-client.js';
+export type { ClientSubscription, ClientSubscribed, ClientEvent } from './types/core-types.js';

@@ -1,5 +1,5 @@
 import WebSocket from 'ws';
-import { ClientEvent, ClientSubscription, ClientSubscribed } from './types/core-types';
+import { ClientEvent, ClientSubscription, ClientSubscribed } from './types/core-types.js';
 
 export class ClientWebSocketClient {
     private ws: WebSocket | null = null;
@@ -71,7 +71,7 @@ export class ClientWebSocketClient {
                 this.ws.onopen = () => {
                     this.isConnected = true;
                     this.reconnectAttempts = 0;
-                    // console.log('Paanj Client WebSocket connected');
+                    this.emit('connect', {});
                     resolve();
                 };
 

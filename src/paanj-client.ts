@@ -1,6 +1,6 @@
-import { ClientOptions, Unsubscribe, ClientSubscription, AuthResponse } from './types/core-types';
-import { ClientWebSocketClient } from './websocket-client';
-import { ClientHttpClient } from './http-client';
+import { ClientOptions, Unsubscribe, ClientSubscription, AuthResponse } from './types/core-types.js';
+import { ClientWebSocketClient } from './websocket-client.js';
+import { ClientHttpClient } from './http-client.js';
 
 /**
  * PaanjClient - Core client SDK for Paanj platform
@@ -39,7 +39,7 @@ export class PaanjClient {
         });
 
         this.httpClient = new ClientHttpClient(this.apiKey, this.options.apiUrl);
-        
+
         // Set up automatic token refresh callback
         this.httpClient.setRefreshTokenCallback(async () => {
             await this.refreshAccessToken();
@@ -61,14 +61,14 @@ export class PaanjClient {
         );
 
         this.setSession(response);
-        
+
         // Emit user created event through WebSocket client event system
         this.wsClient.emit('user.created', {
             userId: response.userId,
             accessToken: response.accessToken,
             refreshToken: response.refreshToken
         });
-        
+
         return response;
     }
 
@@ -89,7 +89,7 @@ export class PaanjClient {
 
         this.wsClient.setAccessToken(token);
         this.httpClient.setAccessToken(token);
-        
+
         // Emit token updated event through WebSocket client event system
         this.wsClient.emit('token.updated', {
             userId: this.userId,
@@ -178,14 +178,14 @@ export class PaanjClient {
         };
 
         this.setSession(authResponse);
-        
+
         // Emit token updated event through WebSocket client event system
         this.wsClient.emit('token.updated', {
             userId: this.userId,
             accessToken: authResponse.accessToken,
             refreshToken: authResponse.refreshToken
         });
-        
+
         return authResponse;
     }
 
